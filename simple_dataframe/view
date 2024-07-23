@@ -1,0 +1,24 @@
+def info(df):
+    # Display column names
+    print("Column Names:", df.column_names)
+    
+    # Display data types of each column
+    print("Data Types:")
+    for i, column_name in enumerate(df.column_names):
+        dtype = df.data[:, i].dtype
+        print(f"  {column_name}: {dtype}")
+    
+    # Display number of rows
+    length = df.data.shape[0]
+    print("Number of Rows:", length)
+    
+    # Calculate and display memory usage
+    memory_usage = df.data.nbytes
+    print("Memory Usage:", memory_usage, "bytes")
+
+def get_column(df, column_name):
+    if column_name in df.column_names:
+        index = df.column_names.index(column_name)
+        return df.data[:, index]
+    else:
+        raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
