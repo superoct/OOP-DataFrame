@@ -1,10 +1,10 @@
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
 import warnings
 from .view import info, get_column
-from .insert import add_column, remove_column, sort, groupby, slice_data
+from .insert import add_column, remove_column, sort, groupby
 from .merge import merge
 from .rename_column import rename_column
+from .slice import slice, slice_batch
 
 class MyDataFrame:
     """ Initialization 
@@ -20,9 +20,18 @@ class MyDataFrame:
 
         df = MyDataFrame(data)
     """
-    def __init__(self, data):
+    def __init__(self, data=None, view=False):
+        if data is None:
+            data = {}
+        
         self.column_names = list(data.keys())
-        self.data = np.array([list(row) for row in zip(*data.values())], dtype=object)
+
+        if self.column_name:
+            self.data = np.array([list(row) for row in zip(*data.values())], dtype=object)
+        else:
+            self.data = np.empty((0,0), dtype=object)
+
+        self.view = view
     
 
     """ Len
@@ -116,21 +125,6 @@ class MyDataFrame:
         return get_column(self, column_name)
 
 
-    """ 
-    
-    """
-    def _apply_function(self, func, *args, **kwargs):
-        return func(self, *args, **kwargs)
-
-    """ 
-
-    """
-    def apply(self, func, *args, **kwargs):
-        with ThreadPoolExecutor() as executor:
-            future = executor.submit(self._apply_function, func, *args, **kwargs)
-            return future.result()
-
-
     """ Add Column
         Adds a column to the data frame.
 
@@ -144,9 +138,9 @@ class MyDataFrame:
         df.add_column('name', ['a', 'b', 'c', 'd'])
     """
     def add_column(self, column_name, values):
-        self.data, self.column_names = self.apply(add_column, column_name, values)
+        self.data, self.column_names = add_column(self, column_name, values)
         return self
-    
+
 
     """ Sort
         Sorts the data based on the columns provided and the ascending order provided.
@@ -195,7 +189,7 @@ class MyDataFrame:
         df.remove_column('amount')
     """
     def remove_column(self, column_name):
-        self.data, self.column_names = self.apply(remove_column, column_name)
+        self.data, self.column_names = remove_column(self, column_name)
         return self
 
 
@@ -218,6 +212,10 @@ class MyDataFrame:
     """
     def slice(self, ranges, keep=False, view=False):
         return slice_data(self, ranges, keep, view, MyDataFrame)
+
+
+    def slice_batch(self, batch):
+        return slice_batch(self, batch)
     
 
     """ Merge
@@ -273,3 +271,7 @@ class MyDataFrame:
     def rename_column(self, old='', new=''):
         rename_column(self, old, new)
         return self
+
+    def iterrows(self):
+        for i in range(self.data.shape[0]):
+            yield i, {col: self.data[i, idx] for idx, col in enumerate(self.column_names)}
