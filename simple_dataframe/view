@@ -1,6 +1,6 @@
 def info(df):
     # Display column names
-    print("Column Names:", df.column_names)
+    print(f"Column Names: {df.column_names}")
     
     # Display data types of each column
     print("Data Types:")
@@ -9,16 +9,13 @@ def info(df):
         print(f"  {column_name}: {dtype}")
     
     # Display number of rows
-    length = df.data.shape[0]
-    print("Number of Rows:", length)
+    print(f"Number of Rows: {df.data.shape[0]}")
     
     # Calculate and display memory usage
-    memory_usage = df.data.nbytes
-    print("Memory Usage:", memory_usage, "bytes")
+    print(f"Memory Usage: {df.data.nbytes} bytes")
 
 def get_column(df, column_name):
-    if column_name in df.column_names:
-        index = df.column_names.index(column_name)
-        return df.data[:, index]
-    else:
+    if column_name not in df.column_names:
         raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+    idx = df.column_names.index(column_name)
+    return df.data[:, idx]
