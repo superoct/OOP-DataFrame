@@ -1,20 +1,23 @@
 import numpy as np
-import warnings
 
 def add_column(df, column_name, values):
-    new_data = np.copy(df.data)  # Make a copy of the data
-    new_column = np.array(values).reshape(-1, 1)
-    new_data = np.hstack((new_data, new_column))  # Add the new column
+    if column_name in df.column_names:
+        raise ValueError(f"Column {column_name} already exists.")
+    if len(values) != df.data.shape[0]:
+        raise ValueError("Length of values does not match number of rows.")
+    
+    new_data = np.column_stack((df.data, values))
     new_column_names = df.column_names + [column_name]
     return new_data, new_column_names
 
 def remove_column(df, column_name):
-    if column_name in df.column_names:
-        index = df.column_names.index(column_name)
-        new_data = np.delete(df.data, index, axis=1)  # Remove the column
-        new_column_names = df.column_names[:index] + df.column_names[index + 1:]
-        return new_data, new_column_names
-    return df.data, df.column_names
+    if column_name not in df.column_names:
+        raise ValueError(f"Column {column_name} does not exists.")
+    
+    idx = df.column_names.index(column_name)
+    new_data = np.delete(df.data, idx, axis=1)  # Remove the column
+    new_column_names = df.column_names[:idx] + df.column_names[idx + 1:]
+    return new_data, new_column_names
 
 def sort(df, columns, ascending):
     # Validate input
@@ -24,23 +27,16 @@ def sort(df, columns, ascending):
     
     # Get indices of columns to sort by
     column_indices = [df.column_names.index(col) for col in columns]
+
+    sort_order = np.lexsort([df.data[:, i] for i in reversed(column_indices)])
+
+    if not all(ascending):
+        for _, asc in enumerate(reversed(ascending)):
+            if not asc:
+                sort_order = sort_order[::-1]
     
-    # Convert ascending list to a sort order
-    sort_order = np.array(ascending)
-    sort_order = np.where(sort_order, 1, -1)  # Convert True/False to 1/-1
-    
-    # Create the sort keys for np.lexsort
-    sort_keys = tuple(df.data[:, idx] for idx in reversed(column_indices))
-    
-    # Perform sorting
-    sorted_indices = np.lexsort(sort_keys)
-    df.data = df.data[sorted_indices]
-    
-    # Apply descending order
-    for idx, order in zip(reversed(column_indices), sort_order):
-        if order == -1:
-            df.data = np.flip(df.data, axis=0)
-    
+    df.data = df.data[sort_order]
+
     return df
 
 def groupby(df, columns, first=True):
@@ -71,24 +67,3 @@ def groupby(df, columns, first=True):
     # Update the DataFrame in place
     df.data = np.array(grouped_data, dtype=object)
     return df
-
-def slice_data(df, ranges, keep=False, view=False, MyDataFrame=None):
-    # Create a boolean mask for the rows to keep
-    mask = np.zeros(len(df.data), dtype=bool)
-    for start, end in ranges:
-        mask[start:end] = True
-    
-    if keep:
-        if view:
-            # Return a view of the selected data
-            return MyDataFrame({col: df.data[mask, idx] for idx, col in enumerate(df.column_names)})
-        else:
-            # Return a copy of the selected data
-            return MyDataFrame({col: np.copy(df.data[mask, idx]) for idx, col in enumerate(df.column_names)})
-    else:
-        if view:
-            warnings.warn("View cannot be created when keep is False. Returning a copy instead.")
-        # Return a copy of the selected data and delete those rows from the DataFrame
-        sliced_data = MyDataFrame({col: np.copy(df.data[mask, idx]) for idx, col in enumerate(df.column_names)})
-        df.data = df.data[~mask]
-        return sliced_data
