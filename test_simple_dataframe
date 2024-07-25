@@ -2,12 +2,14 @@ from simple_dataframe import MyDataFrame
 from datetime import datetime, timedelta
 import random
 import string
+from io import StringIO
+import numpy as np
 
 # Example Usage
 pk_columns = ['id', 'name']
 sort_columns = ['sv_op_timestamp']
 
-random_range = 10  # Adjusted for simplicity
+random_range = 5 #10  # Adjusted for simplicity
 
 data = {
     'id': [1, 2, 3, 4], #[random.randint(0, 999999) for _ in range(random_range)],
@@ -69,6 +71,33 @@ print()
 merge_df.rename_column(old='_etl_hive', new='')
 
 merge_df.info()
+
+csv_data = """id,name,amount
+1,Alice ,100.5
+2,NULL,200.75
+3,Charlie,NULL
+"""
+
+csv_data = csv_data.replace(',', chr(1))
+
+print(csv_data)
+print()
+
+# Use StringIO to simulate a file object
+file_like = StringIO(csv_data)
+
+# Test reading a CSV file from StringIO
+df = MyDataFrame.read_csv(file_like, delimiter=chr(1), na_values=['NULL'], dtype=str, fillna='ACTUAL_NULL')
+
+# Display the DataFrame information and data
+df.info()
+print(df.data)
+print()
+
+df.apply_to_column('name', lambda x: x.lower().strip())
+
+df.info()
+print(df.data)
 
 """# Merge DataFrames
 merged_df = df1.merge(df2, on='id', how='inner')
