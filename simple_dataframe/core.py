@@ -5,6 +5,8 @@ from .insert import add_column, remove_column, sort, groupby
 from .merge import merge
 from .rename_column import rename_column
 from .slice import slice, slice_batch
+from .read_csv import read_csv
+from .apply import apply_to_column
 
 class MyDataFrame:
     """ Initialization 
@@ -67,6 +69,11 @@ class MyDataFrame:
     @property
     def empty(self):
         return self.data.size == 0
+
+
+    def itterrows(self):
+        for i in range(self.data.shape[0]):
+            yield i, {col: self.data[i, idx] for idx, col in enumerate(self.column_names)}
     
     
     """ Get Data
@@ -272,6 +279,12 @@ class MyDataFrame:
         rename_column(self, old, new)
         return self
 
-    def iterrows(self):
-        for i in range(self.data.shape[0]):
-            yield i, {col: self.data[i, idx] for idx, col in enumerate(self.column_names)}
+    @classmethod
+    def read_csv(cls, file, delimiter=',', na_values=None, dtype=None, fillna=None):
+        column_names, data = read_csv(file, delimiter, na_values, dtype, fillna)
+    
+        return cls({col: data[:, i] for i, col in enumerate(column_names)})
+    
+    
+    def apply_to_column(self, column, func):
+        return apply_to_column(self, column, func)
