@@ -218,7 +218,7 @@ class MyDataFrame:
         df_copy = df.slice([0,1], keep=False, view=False) #This might cause the df_view to be empty.
     """
     def slice(self, ranges, keep=False, view=False):
-        return slice_data(self, ranges, keep, view, MyDataFrame)
+        return slice(self, ranges, keep, view, MyDataFrame)
 
 
     def slice_batch(self, batch):
